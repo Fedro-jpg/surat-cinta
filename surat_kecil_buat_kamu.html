@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ff6b9a">
+<title>Surat Kecil Buat Kamu 💌</title>
+<style>
+  :root { --pink:#ff6b9a; --deep:#8f2858; --cream:#fff8fb; --ink:#382332; }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; display:grid; place-items:center; padding:18px;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--ink);
+    background:radial-gradient(circle at top left,#ffe1ec,transparent 42%),
+               linear-gradient(135deg,#fff8fb,#f4e8ff);
+  }
+  .card {
+    width:min(100%,520px); background:rgba(255,255,255,.94); border:1px solid #ffffff;
+    border-radius:28px; padding:clamp(22px,5vw,34px); text-align:center;
+    box-shadow:0 18px 55px #8f28581a; position:relative; overflow:hidden;
+  }
+  .badge { display:inline-block; padding:7px 12px; border-radius:99px; background:#fff0f5; color:var(--deep); font-size:.82rem; font-weight:700; }
+  h1 { font-size:clamp(1.7rem,6vw,2.25rem); line-height:1.15; margin:16px 0 10px; }
+  p { line-height:1.65; }
+  .sub { color:#775c6b; margin:0 auto 22px; max-width:390px; }
+  label { display:block; text-align:left; font-weight:700; font-size:.9rem; margin:14px 0 6px; }
+  input { width:100%; padding:13px 14px; border:1px solid #ead6e1; border-radius:13px; font:inherit; outline:none; background:#fff; }
+  input:focus { border-color:var(--pink); box-shadow:0 0 0 3px #ff6b9a22; }
+  .hint { font-size:.8rem; color:#876c7c; text-align:left; margin:6px 0 0; }
+  button { border:0; border-radius:14px; padding:13px 18px; font:inherit; font-weight:750; cursor:pointer; transition:transform .15s, box-shadow .15s; }
+  button:active { transform:scale(.98); }
+  .primary { width:100%; margin-top:20px; color:white; background:linear-gradient(135deg,#ff6b9a,#db4f8c); box-shadow:0 8px 18px #ff6b9a3b; }
+  .choices { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:24px; min-height:58px; }
+  .yes { background:#e5faef; color:#176b43; }
+  .no { background:#fff0f2; color:#a02f4c; }
+  .letter { padding:18px; background:#fff7fa; border:1px dashed #f2a4c0; border-radius:18px; margin:20px 0; text-align:left; white-space:pre-line; }
+  .hidden { display:none !important; }
+  .tiny { font-size:.78rem; color:#92798a; margin-top:20px; }
+  .heart { font-size:2.4rem; animation:float 2s ease-in-out infinite; display:block; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+  .error { color:#b42345; font-size:.88rem; margin-top:8px; }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<main class="card">
+  <section id="setup">
+    <span class="badge">💌 a tiny confession</span>
+    <h1>Surat kecil buat seseorang</h1>
+    <p class="sub">Isi nama kalian dulu. Setelah itu, bagikan halaman ini ke orang yang ingin kamu ajak bicara dari hati ke hati.</p>
+    <label for="target">Nama orang yang dituju</label>
+    <input id="target" maxlength="50" placeholder="Contoh: Aulia" autocomplete="off">
+    <label for="sender">Nama kamu (pengirim)</label>
+    <input id="sender" maxlength="50" placeholder="Contoh: Fedro" autocomplete="off">
+    <label for="phone">Nomor WhatsApp kamu (opsional)</label>
+    <input id="phone" inputmode="tel" maxlength="20" placeholder="Contoh: 62812xxxxxxx">
+    <p class="hint">Pakai kode negara, misalnya 62 untuk Indonesia. Nomor hanya dipakai untuk menyiapkan chat hasil pilihan, tidak dikirim otomatis.</p>
+    <button class="primary" id="start">Pratinjau surat ✨</button>
+    <button id="shareLink" style="width:100%;margin-top:10px;background:#f4edf7;color:#67465c;">Buat & salin link untuk dibagikan 🔗</button>
+    <div id="setupError" class="error" role="alert"></div>
+  </section>
+
+  <section id="question" class="hidden">
+    <span class="heart">💗</span>
+    <span class="badge">dear <span id="dearName"></span></span>
+    <h1 id="questionTitle"></h1>
+    <p class="sub">Aku mau jujur tentang perasaanku. Nggak ada jawaban yang harus dipaksakan. Pilih yang benar-benar kamu rasakan, ya.</p>
+    <div class="letter" id="confession"></div>
+    <div class="choices" id="choices">
+      <button class="yes" id="accept">akuu terima kamu 💖</button>
+      <button class="no" id="reject">maaf, aku menolak kamu</button>
+    </div>
+    <p id="rejectHint" class="tiny">Tombol merah lagi salting 😭 (maksimal 5 kali menghindar, setelah itu bisa dipilih normal).</p>
+  </section>
+
+  <section id="result" class="hidden" aria-live="polite">
+    <span class="heart" id="resultEmoji">💞</span>
+    <span class="badge" id="resultBadge">surat sudah dijawab</span>
+    <h1 id="resultTitle"></h1>
+    <p id="resultText"></p>
+    <div class="letter" id="resultLetter"></div>
+    <button class="primary hidden" id="whatsapp">Kirim hasil ke WhatsApp 📲</button>
+    <p class="tiny">Catatan: tombol WhatsApp membuka aplikasi dengan pesan yang sudah disiapkan. Pesan baru terkirim setelah pengirim menekan tombol Kirim.</p>
+    <button id="restart" style="margin-top:10px;background:#f4edf7;color:#67465c;">Kembali ke awal</button>
+  </section>
+</main>
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  let targetName = "", senderName = "", phoneNumber = "", rejectDodges = 0;
+  let chosen = "";
+
+  const rejectionMessages = [
+    "Nggak semua cerita harus berakhir bersama. Makasih sudah jujur, semoga setelah ini kita tetap saling menghargai. 🌷",
+    "Plot twist memang kadang bukan yang kita harapkan. Tetap jadi versi terbaik dirimu, ya. ✨",
+    "Satu jawaban bukan ukuran nilai dirimu. Tarik napas, tetap semangat, dan tetap hormati pilihannya. 🤍",
+    "Nggak cocok bukan berarti ada yang kurang. Semoga kamu menemukan orang yang perasaannya sejalan. 🌻",
+    "Bab ini mungkin selesai di sini, tapi hidupmu masih punya banyak halaman bagus. Tetap baik-baik, ya. 📖"
+  ];
+  const acceptMessages = [
+    "Makasih sudah menerima aku jadi pasanganmu. Hari ini resmi jadi hari yang bikin aku senyum-senyum sendiri 😭💗 Semoga kita bisa saling jujur, saling dukung, dan tetap jadi diri sendiri.",
+    "WAIT, INI BENERAN KITA JADIAN?! 😭💞 Makasih udah mau kasih kesempatan. Semoga hubungan ini jadi tempat yang nyaman, penuh komunikasi, dan nggak lupa ketawa bareng.",
+    "Makasih sudah memilih aku. Aku senang banget hari ini! 🫶 Kita jalanin pelan-pelan, saling menghargai, dan ngobrol baik-baik kalau ada apa-apa, ya."
+  ];
+
+  function show(section) {
+    ["setup", "question", "result"].forEach(id => $(id).classList.toggle("hidden", id !== section));
+  }
+  function cleanPhone(value) {
+    return value.replace(/[^\d+]/g, "").replace(/^00/, "").replace(/^\+/, "");
+  }
+  function readSetup() {
+    targetName = $("target").value.trim();
+    senderName = $("sender").value.trim();
+    phoneNumber = cleanPhone($("phone").value.trim());
+    $("setupError").textContent = "";
+    if (!targetName || !senderName) {
+      $("setupError").textContent = "Nama target dan nama pengirim wajib diisi dulu ya.";
+      return false;
+    }
+    if (phoneNumber && !/^\d{8,15}$/.test(phoneNumber)) {
+      $("setupError").textContent = "Nomor WhatsApp belum sesuai. Gunakan angka dengan kode negara, misalnya 62812xxxxxxx.";
+      return false;
+    }
+    return true;
+  }
+  function openLetter() {
+    $("dearName").textContent = senderName;
+    $("questionTitle").textContent = `${targetName}, aku boleh jujur?`;
+    $("confession").textContent = `Hai ${targetName},\n\nAku, ${senderName}, punya perasaan lebih ke kamu. Aku nggak mau maksa atau bikin kamu nggak nyaman. Aku cuma ingin tahu, apakah kamu juga mau mencoba menjalani hubungan denganku? Apa pun jawabanmu, aku akan berusaha menghargainya. 🤍`;
+    show("question");
+  }
+  $("start").addEventListener("click", () => {
+    if (readSetup()) openLetter();
+  });
+  $("shareLink").addEventListener("click", async () => {
+    if (!readSetup()) return;
+    const url = new URL(window.location.href);
+    url.search = new URLSearchParams({ target: targetName, sender: senderName, phone: phoneNumber }).toString();
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      $("setupError").textContent = "Link berhasil disalin! Setelah file ini di-hosting online, bagikan link tersebut ke target. 💌";
+      $("setupError").style.color = "#176b43";
+    } catch (e) {
+      $("setupError").textContent = "Link siap dibuat setelah halaman di-hosting online. Browser ini tidak mengizinkan salin otomatis.";
+      $("setupError").style.color = "#b42345";
+    }
+  });
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("target") && params.get("sender")) {
+    $("target").value = params.get("target");
+    $("sender").value = params.get("sender");
+    $("phone").value = params.get("phone") || "";
+    if (readSetup()) openLetter();
+  }
+
+  $("accept").addEventListener("click", () => finish("accept"));
+  $("reject").addEventListener("click", () => {
+    if (rejectDodges < 5) {
+      rejectDodges++;
+      const button = $("reject");
+      const box = $("choices").getBoundingClientRect();
+      const maxX = Math.max(0, Math.min(80, box.width - button.offsetWidth));
+      button.style.transform = `translate(${Math.round(Math.random() * maxX - maxX / 2)}px, ${Math.round(Math.random() * 26 - 13)}px)`;
+      $("rejectHint").textContent = `Tombolnya kabur ${rejectDodges}/5 kali 😭 Setelah itu kamu tetap bebas memilih.`;
+      if (rejectDodges === 5) {
+        button.style.transform = "none";
+        $("rejectHint").textContent = "Oke, tombolnya sudah tenang 😅 Sekarang kamu bisa memilih dengan bebas.";
+      }
+      return;
+    }
+    finish("reject");
+  });
+
+  function finish(answer) {
+    chosen = answer;
+    show("result");
+    $("whatsapp").classList.toggle("hidden", !phoneNumber);
+    if (answer === "accept") {
+      $("resultEmoji").textContent = "💖";
+      $("resultBadge").textContent = "YAY, DITERIMA!";
+      $("resultTitle").textContent = `Makasih, ${targetName}! 🥹`;
+      $("resultText").textContent = "Status hati: senyum sampai susah diturunkan.";
+      $("resultLetter").textContent = `Dear ${senderName},\n\n${acceptMessages[Math.floor(Math.random() * acceptMessages.length)]}\n\nDari, ${targetName} 💌`;
+    } else {
+      $("resultEmoji").textContent = "🌷";
+      $("resultBadge").textContent = "JAWABAN DITERIMA";
+      $("resultTitle").textContent = `Makasih sudah jujur, ${targetName}.`;
+      $("resultText").textContent = "Memang mungkin bukan jawaban yang diharapkan, tetapi pilihanmu tetap harus dihormati.";
+      $("resultLetter").textContent = `Dear ${senderName},\n\n${rejectionMessages[Math.floor(Math.random() * rejectionMessages.length)]}\n\nSalam baik,\n${targetName}`;
+    }
+    $("whatsapp").textContent = answer === "accept" ? "Kirim kabar bahagia ke WhatsApp 📲" : "Kirim jawaban ke WhatsApp 📲";
+  }
+
+  $("whatsapp").addEventListener("click", () => {
+    if (!phoneNumber) return;
+    const answerText = chosen === "accept" ? "menerima" : "menolak dengan jujur";
+    const message = `Hai ${senderName}, aku ${targetName}. Aku sudah membaca suratmu dan aku memilih ${answerText}.`;
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+  });
+  $("restart").addEventListener("click", () => {
+    rejectDodges = 0;
+    $("reject").style.transform = "none";
+    $("rejectHint").textContent = "Tombol merah lagi salting 😭 (maksimal 5 kali menghindar, setelah itu bisa dipilih normal).";
+    show("setup");
+  });
+})();
+</script>
+</body>
+</html>
